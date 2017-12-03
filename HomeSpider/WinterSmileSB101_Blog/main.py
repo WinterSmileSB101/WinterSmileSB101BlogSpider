@@ -13,6 +13,7 @@ user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
 req = urllib.request.Request(url, headers={
     'User-Agent': 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
 })
+print('发送 页面网络请求')
 response = urllib.request.urlopen(req)
 content = response.read().decode('utf-8')
 # output content of page
@@ -39,6 +40,7 @@ while index <= pageNum:
         req = urllib.request.Request(url, headers={
             'User-Agent': 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
         })
+        print('发送 页面网络请求 : '+url)
         response = urllib.request.urlopen(req)
         content = response.read().decode('utf-8')
         soup = BeautifulSoup(content, "lxml")
@@ -76,6 +78,7 @@ while index <= pageNum:
         # 把多余的转换 : ==> %3A ，还原
         urlMain = urlMain.replace('%3A', ':')
         # print(urlMain)
+        print('发送 文章网络请求')
         req = urllib.request.Request(urlMain, headers={
             'User-Agent': 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
         })
@@ -127,12 +130,10 @@ while index <= pageNum:
         # print(blockquote.next_sibling.next_sibling)
 
         for nextTag in body.children:
-            #print('222')
-            print(nextTag)
-            #print(type(nextTag))
+            # print(nextTag)
+            # print(type(nextTag))
             if type(nextTag) == bs4.element.NavigableString:
                 continue
-            #print('33333333333')
             tagName = ''
             codeType = ''
             codeStart = ''
@@ -190,7 +191,7 @@ while index <= pageNum:
                 # 为空表示是图片
                 tagContent = nextTag.text.strip()
                 if tagContent == '':
-                    file.write("[image](" + nextTag.find('img')['src'] + ")\n")
+                    file.write("![image](" + nextTag.find('img')['src'] + ")\n")
                     continue
                 else:
                     links = nextTag.find_all('a')
