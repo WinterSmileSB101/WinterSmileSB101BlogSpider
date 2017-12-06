@@ -90,44 +90,46 @@ while index <= pageNum:
         body = mainSoup.find('div', itemprop="articleBody")
 
         blockquote = body.blockquote
-        blockquoteText = blockquote.p.text
-        # print(blockquote.p)
-        extenalUrl = None
-        mineUrl = blockquote.p.a['href']
-        if blockquote.p.find('a', rel="external"):
-            extenalUrl = blockquote.p.find('a', rel="external")['href']
-        # print(extenalUrl)
-        # 把其中的链接替换为 md 语法
-        if extenalUrl:
-            blockquoteText = blockquoteText.replace("原文地址","[原文地址]("+extenalUrl+")")
+        if blockquote != None:
+            blockquoteText = blockquote.p.text
+            # print(blockquote.p)
+            extenalUrl = None
+            mineUrl = blockquote.p.a['href']
+            if blockquote.p.find('a', rel="external"):
+                extenalUrl = blockquote.p.find('a', rel="external")['href']
+            # print(extenalUrl)
+            # 把其中的链接替换为 md 语法
+            if extenalUrl:
+                blockquoteText = blockquoteText.replace("原文地址", "[原文地址](" + extenalUrl + ")")
 
-        blockquoteText = blockquoteText.replace(mineUrl,"["+mineUrl+"]("+mineUrl+")")
+            blockquoteText = blockquoteText.replace(mineUrl, "[" + mineUrl + "](" + mineUrl + ")")
         # 获取标签
         tags = mainSoup.find_all('a', rel='tag')
         # print(tags)
         # 写入 md 文件
         # 判断路径是否存在
-        if os.path.exists(filePath + str(index)+'/')==False:
-            os.makedirs(filePath + str(index)+'/')
-        file = codecs.open(filePath + str(index)+'/'+articleTitle+'.md', "w", encoding='utf8')  # 指定文件的编码格式
+        if not os.path.exists(filePath + str(index) + '/'):
+            os.makedirs(filePath + str(index) + '/')
+        file = codecs.open(filePath + str(index) + '/' + articleTitle + '.md', "w", encoding='utf8')  # 指定文件的编码格式
 
         # 写入前置申明
         file.write('---\n')
-        file.write("title: "+articleTitle+'\n')
-        file.write("date: "+createTime+'\n')
-        file.write("date: " + updateTime+'\n')
-        file.write("categories: "+'\n')
+        file.write("title: " + articleTitle + '\n')
+        file.write("date: " + createTime + '\n')
+        file.write("date: " + updateTime + '\n')
+        file.write("categories: " + '\n')
         for category in categoryName.split(','):
-            file.writelines('- '+category+'\n')
+            file.writelines('- ' + category + '\n')
         file.writelines("tags: ")
         for tag in tags:
             tag = tag.text.replace('# ', '')
-            file.writelines('- ' + tag+'\n')
-        file.writelines('---'+'\n')
+            file.writelines('- ' + tag + '\n')
+        file.writelines('---' + '\n')
         # 写入引用块
-        file.writelines('> '+blockquoteText)
-        # 遍历正文块，写入文件,注意遍历文档树的时候 next_sibling 是紧紧接着的，比如这里是 \n,所以需要两个
-        # print(blockquote.next_sibling.next_sibling)
+        if blockquote != None:
+            file.writelines('> ' + blockquoteText)
+            # 遍历正文块，写入文件,注意遍历文档树的时候 next_sibling 是紧紧接着的，比如这里是 \n,所以需要两个
+            # print(blockquote.next_sibling.next_sibling)
 
         for nextTag in body.children:
             # print(nextTag)
@@ -155,7 +157,9 @@ while index <= pageNum:
                 tagName = '##### '
                 file.write(tagName + tagContent + '\n')
                 continue
+            # 代码块
             if nextTag.select('figure').__len__() > 0 or nextTag.name == 'figure':
+                # 如果 select 的 length 大于 0 则表示这个元素是 包含 figure 的元素
                 if nextTag.select('figure').__len__() > 0:
                     nextTag = nextTag.select('figure')[0]
 
