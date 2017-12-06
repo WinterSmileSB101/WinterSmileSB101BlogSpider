@@ -205,3 +205,96 @@ while index <= pageNum:
                     continue
         file.close()
     index = index+1
+
+# 读取特殊页面并且存入文件（代码冗余，日后重构代码）
+aboutUrl = url+'about'
+# 打开链接
+conn = req.urlopen(aboutUrl)
+# 以 utf-8 编码获取网页内容
+content = conn.read().decode('utf-8')
+# 输出
+# print(content)
+
+# 生成 soup 对象，准备解析 html
+soup = BeautifulSoup(content,'lxml')
+
+# 判断路径是否存在
+if not os.path.exists(filePath+'about/'):
+    os.makedirs(filePath+'about/')
+file = codecs.open(filePath+'about/简历.md', "w", encoding='utf8')  # 指定文件的编码格式
+
+body = soup.body.main.div.div.div.div
+# print(body)
+for nextTag in body.children:
+    # print(nextTag)
+    # print(type(nextTag))
+    if type(nextTag) == bs4.element.NavigableString:
+        continue
+    tagName = ''
+    codeType = ''
+    codeStart = ''
+    codeEnd = ''
+    tagContent = nextTag.text.strip()
+    if nextTag.name == 'h1':
+        tagName = '# '
+        file.write(tagName + tagContent + '\n')
+        continue
+    if nextTag.name == 'h2':
+        tagName = '## '
+        file.write(tagName + tagContent + '\n')
+        continue
+    if nextTag.name == 'h3':
+        tagName = '### '
+        file.write(tagName + tagContent + '\n')
+        continue
+    if nextTag.name == 'h4':
+        tagName = '##### '
+        file.write(tagName + tagContent + '\n')
+        continue
+    # 代码块
+    if nextTag.select('figure').__len__() > 0 or nextTag.name == 'figure':
+        # 如果 select 的 length 大于 0 则表示这个元素是 包含 figure 的元素
+        if nextTag.select('figure').__len__() > 0:
+            nextTag = nextTag.select('figure')[0]
+
+        codeType = nextTag['class'][nextTag['class'].__len__() - 1] + '\n'
+        codeStart = '``` '
+        codeEnd = '```\n'
+        codeLine = ''
+        lineNumber = nextTag.table.tr.find('td', attrs={'class': 'gutter'}).text
+        code = nextTag.table.tr.find('td', attrs={'class': 'code'}).text
+        tagContent = tagContent.replace(lineNumber, '').replace(code, '')
+        # print(lineNumber)
+        # print(code)
+        # print(tagContent)
+        for line in nextTag.table.tr.find('td', attrs={'class' : 'code'}).find_all('div'):
+            codeLine += line.text.strip()+'\n'
+        file.write(tagContent+'\n')
+        file.write(codeStart + codeType + codeLine + '\n' + codeEnd)
+        continue
+
+    # 无序列表
+    if nextTag.name == 'ul':
+        for li in nextTag.find_all('li'):
+            file.write('- ' + li.text.strip() + '\n')
+            continue
+    # 有序列表
+    if nextTag.name == 'ol':
+        olIndex = 1
+        for li in nextTag.find_all('li'):
+            file.write(olIndex + '. ' + li.text.strip() + '\n')
+            olIndex += 1
+        continue
+    if nextTag.name == 'p':
+        # 为空表示是图片
+        tagContent = nextTag.text.strip()
+        if tagContent == '':
+            file.write("![image](" + nextTag.find('img')['src'] + ")\n")
+            continue
+        else:
+            links = nextTag.find_all('a')
+            for link in links:
+                tagContent = tagContent.replace(link.text, "[" + link['href'] + "](" + link['href'] + ")")
+            file.write(tagContent + '\n')
+            continue
+file.close()
